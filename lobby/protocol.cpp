@@ -233,7 +233,7 @@ void deserialize_users_list(ENetPacket *packet, std::vector<User> &users)
   uint32_t size;
   BitStream bs(packet->data, packet->dataLength);
   bs.Read(&size);
-  for (int i = 0; i < size; ++i)
+  for (uint32_t i = 0; i < size; ++i)
   {
     User user;
     bs.Read(&user);
@@ -246,7 +246,7 @@ void deserialize_rooms_list(ENetPacket *packet, std::vector<Room> &rooms)
   uint32_t size;
   BitStream bs(packet->data, packet->dataLength);
   bs.Read(&size);
-  for (int i = 0; i < size; ++i)
+  for (uint32_t i = 0; i < size; ++i)
   {
     Room room;
     bs.Read(&room);
@@ -261,7 +261,7 @@ void deserialize_room_info_agar(ENetPacket *packet, Room &room, AgarSettings &se
   bs.Read(&room);
   bs.Read(&settings);
   bs.Read(&size);
-  for (int i = 0; i < size; ++i)
+  for (uint32_t i = 0; i < size; ++i)
   {
     User user;
     bs.Read(&user);
@@ -276,7 +276,7 @@ void deserialize_room_info_cars(ENetPacket *packet, Room &room, CarsSettings &se
   bs.Read(&room);
   bs.Read(&settings);
   bs.Read(&size);
-  for (int i = 0; i < size; ++i)
+  for (uint32_t i = 0; i < size; ++i)
   {
     User user;
     bs.Read(&user);

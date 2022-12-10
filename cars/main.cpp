@@ -45,10 +45,11 @@ struct Input
 static std::vector<Entity> entities;
 static uint16_t my_entity = invalid_entity;
 static std::vector<std::vector<Snapshot>> history;
-static std::vector<Input> inputHistroy;
+static std::vector<Input> input_histroy;
 static int offset = 0;
-static Snapshot moveTo;
+static Snapshot move_to;
 static int port;
+static char host_name[32] = "localhost";
 
 void addSnapshot(uint16_t eid, const Entity &e, uint32_t t)
 {
@@ -59,9 +60,9 @@ void addSnapshot(uint16_t eid, const Entity &e, uint32_t t)
 
 int findHistoryIdx(uint32_t t)
 {
-  for (int i = 0; i < inputHistroy.size(); ++i)
+  for (int i = 0; i < input_histroy.size(); ++i)
   {
-    if (inputHistroy[i].t >= t)
+    if (input_histroy[i].t >= t)
       return i;
   }
   return -1;
@@ -73,10 +74,10 @@ void checkOffset(float x, float y, float ori, uint32_t t)
   int idx = findHistoryIdx(t);
   if (idx == -1)
   {
-    inputHistroy.clear();
+    input_histroy.clear();
     return;
   }
-  Input ih = inputHistroy[idx];
+  Input ih = input_histroy[idx];
   if (abs(ih.x - x) > eps || abs(ih.y - y) > eps || abs(ih.ori - ori) > eps)
   {
     offset = 5;
@@ -85,18 +86,18 @@ void checkOffset(float x, float y, float ori, uint32_t t)
     e.y = y;
     e.ori = ori;
     e.speed = ih.speed;
-    for (int i = idx; i < inputHistroy.size(); ++i)
+    for (int i = idx; i < input_histroy.size(); ++i)
     {
-      e.steer = inputHistroy[i].steer;
-      e.thr = inputHistroy[i].thr;
-      simulate_entity(e, inputHistroy[i].dt);
+      e.steer = input_histroy[i].steer;
+      e.thr = input_histroy[i].thr;
+      simulate_entity(e, input_histroy[i].dt);
     }
-    Input last = inputHistroy.back();
-    moveTo.x = (e.x - last.x) / offset;
-    moveTo.y = (e.y - last.y) / offset;
-    moveTo.ori = (e.ori - last.ori) / offset;
+    Input last = input_histroy.back();
+    move_to.x = (e.x - last.x) / offset;
+    move_to.y = (e.y - last.y) / offset;
+    move_to.ori = (e.ori - last.ori) / offset;
   }
-  inputHistroy.clear();
+  input_histroy.clear();
 }
 
 void getInterpolate(uint16_t uid, float &x, float &y, float &ori)
@@ -182,10 +183,11 @@ void read_args(int argc, const char** argv)
   printf("count args: %d\n", argc);
   if (argc > 1)
   {
-    read_arg(argv[1], port);
-    read_arg(argv[2], forward_accel);
-    read_arg(argv[3], break_accel);
-    read_arg(argv[4], speed_rotation);
+    strcpy_s(host_name, argv[1]);
+    read_arg(argv[2], port);
+    read_arg(argv[3], forward_accel);
+    read_arg(argv[4], break_accel);
+    read_arg(argv[5], speed_rotation);
     printf("get port: %d forward_accel: %f break_accel: %f speed_rotation: %f \n", port, forward_accel,
       break_accel, speed_rotation);
   }
@@ -208,7 +210,11 @@ int main(int argc, const char **argv)
   }
 
   ENetAddress address;
-  enet_address_set_host(&address, "localhost");
+  if (enet_address_set_host(&address, host_name))
+  {
+    printf("Can't parse host name");
+    return 1;
+  }
   address.port = port;
 
   ENetPeer *serverPeer = enet_host_connect(client, &address, 2, 0);
@@ -279,9 +285,9 @@ int main(int argc, const char **argv)
         {
           if (offset > 0)
           {
-            e.x += moveTo.x;
-            e.y += moveTo.y;
-            e.ori += moveTo.ori;
+            e.x += move_to.x;
+            e.y += move_to.y;
+            e.ori += move_to.ori;
             --offset;
           }
           
@@ -291,7 +297,7 @@ int main(int argc, const char **argv)
           e.thr = thr;
           e.steer = steer;
           simulate_entity(e, dt);
-          inputHistroy.push_back({ thr, steer, e.speed, dt, e.x, e.y, e.ori, enet_time_get() });
+          input_histroy.push_back({ thr, steer, e.speed, dt, e.x, e.y, e.ori, enet_time_get() });
           
           // Send
           send_entity_input(serverPeer, my_entity, thr, steer);

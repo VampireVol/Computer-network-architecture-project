@@ -23,7 +23,8 @@
 static std::vector<Entity> entities;
 static uint16_t my_entity = invalid_entity;
 static int port = 10131;
-static float speedModif = 1.0f;
+static float speed_modif = 1.0f;
+static char host_name[32] = "localhost";
 
 void on_new_entity_packet(ENetPacket *packet)
 {
@@ -72,9 +73,10 @@ void read_args(int argc, const char** argv)
   printf("count args: %d\n", argc);
   if (argc > 1)
   {
-    read_arg(argv[1], port);
-    read_arg(argv[2], speedModif);
-    printf("get port: %d speedModif: %f\n", port, speedModif);
+    strcpy_s(host_name, argv[1]);
+    read_arg(argv[2], port);
+    read_arg(argv[3], speed_modif);
+    printf("get port: %d speed_modif: %f\n", port, speed_modif);
   }
 }
 
@@ -95,7 +97,11 @@ int main(int argc, const char **argv)
   }
 
   ENetAddress address;
-  enet_address_set_host(&address, "127.0.0.1");
+  if (enet_address_set_host(&address, host_name))
+  {
+    printf("Can't parse host name");
+    return 1;
+  }
   address.port = port;
 
   ENetPeer *serverPeer = enet_host_connect(client, &address, 2, 0);
@@ -164,8 +170,8 @@ int main(int argc, const char **argv)
       for (Entity &e : entities)
         if (e.eid == my_entity)
         {
-          float speed = e.GetSpeed() * speedModif;
-          speed = (left || right) && (up || down) ? speed / sqrt(2) : speed;
+          float speed = e.GetSpeed() * speed_modif;
+          speed = (left || right) && (up || down) ? speed / sqrtf(2) : speed;
           // Update
           e.x += ((left ? -dt : 0.f) + (right ? +dt : 0.f)) * speed;
           e.y += ((up ? +dt : 0.f) + (down ? -dt : 0.f)) * speed;

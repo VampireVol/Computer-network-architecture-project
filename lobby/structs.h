@@ -3,7 +3,7 @@
 
 struct Room
 {
-  char name[32];
+  char name[32] = "";
   uint16_t id = 0;
   uint8_t curPlayers = 0;
   uint8_t maxPlayers = 1;
@@ -31,7 +31,7 @@ struct CarsSettings
 
 struct User
 {
-  char name[32];
+  char name[32] = "";
   uint16_t roomId = 0;
   uint16_t id = 0;
 };
@@ -40,4 +40,5 @@ struct ServerInfo
 {
   uint16_t id = 0;
   uint16_t port = 0;
+  char hostName[32] = "";
 };

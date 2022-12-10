@@ -29,6 +29,7 @@
 #endif
 
 static int portLobby = 10887;
+static char host_name_lobby[32] = "localhost";
 static std::vector<Room> rooms;
 static std::vector<User> users;
 static User user;
@@ -105,13 +106,13 @@ void enet_loop(ENetHost* client)
         printf("modif: %f", agarSettings.speedModif);
         if (room.type == 0)
         {
-          const std::string path = "../../../agario/x64/Debug/hw-6.exe";
+          const std::string path = "../../../agario/x64/Debug/agario.exe";
           _execl(path.c_str(), "go", std::to_string(port).c_str(),
                  std::to_string(agarSettings.speedModif).c_str(), nullptr);
         }
         else
         {
-          const std::string path = "../../../cars/x64/Debug/hw-6.exe";
+          const std::string path = "../../../cars/x64/Debug/cars.exe";
           _execl(path.c_str(), "go", std::to_string(port).c_str(),
                  std::to_string(carsSettings.forwardAccel).c_str(),
                  std::to_string(carsSettings.breakAccel).c_str(),
@@ -171,22 +172,22 @@ void ui_loop(ENetPeer* server)
       ImGui::TableSetupColumn("Type");
       ImGui::TableSetupColumn("Running");
       ImGui::TableHeadersRow();
-      for (const auto& room : rooms)
+      for (const auto& r : rooms)
       {
         
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
-        if (ImGui::Selectable(room.name, room.id == selected, selectable_flags))
+        if (ImGui::Selectable(r.name, r.id == selected, selectable_flags))
         {
-          selected = room.id;
+          selected = r.id;
         }
         ImGui::TableNextColumn();
-        ImGui::Text("%d/%d", room.curPlayers, room.maxPlayers);
+        ImGui::Text("%d/%d", r.curPlayers, r.maxPlayers);
         ImGui::TableNextColumn();
-        ImGui::Text(room.type == 0 ? "Agario" : "Cars");
+        ImGui::Text(r.type == 0 ? "Agario" : "Cars");
         ImGui::TableNextColumn();
-        ImGui::Text(room.running == 0 ? "Waiting" : "Running");
+        ImGui::Text(r.running == 0 ? "Waiting" : "Running");
       }
       ImGui::EndTable();
     }
@@ -205,7 +206,7 @@ void ui_loop(ENetPeer* server)
     {
       show_rooms_list_window = false;
       show_create_room_window = true;
-      strcpy(room.name, "");
+      strcpy_s(room.name, "");
     }
     ImGui::SameLine();
     if (ImGui::Button("Refresh"))
@@ -317,11 +318,11 @@ void ui_loop(ENetPeer* server)
     static bool display_headers = false;
     if (ImGui::BeginTable("table1", 1, flags))
     {
-      for (const auto& user : users)
+      for (const auto& u : users)
       {
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::Text(user.name);
+        ImGui::Text(u.name);
       }
       ImGui::EndTable();
     }
@@ -364,7 +365,7 @@ int main(int, char**)
   }
 
   ENetAddress address;
-  enet_address_set_host(&address, "127.0.0.1");
+  enet_address_set_host(&address, host_name_lobby);
   address.port = portLobby;
 
   ENetPeer* serverPeer = enet_host_connect(client, &address, 2, 0);
