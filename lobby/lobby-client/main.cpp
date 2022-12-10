@@ -377,7 +377,12 @@ int main(int, char**)
   }
   else
   {
-    printf("can't open file, set hostname by defualt");
+    printf("can't open LobbyHostName.txt, set hostname by defualt");
+    std::fstream out("LobbyHostName.txt", std::fstream::out);
+    if (out.is_open())
+    { 
+      out << "127.0.0.1";
+    }
   }
 
 
