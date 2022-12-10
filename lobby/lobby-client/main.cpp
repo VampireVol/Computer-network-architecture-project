@@ -7,7 +7,6 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
-//#include <stdio.h>
 #include <enet/enet.h>
 //#include <sys/types.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -16,9 +15,11 @@
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
 #include "../protocol.h"
-//#include <stdio.h>
 #include <windows.h>
 #include <process.h>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
@@ -28,7 +29,7 @@
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
-static int portLobby = 10887;
+static uint16_t portLobby = 10887;
 static char host_name_lobby[32] = "localhost";
 static std::vector<Room> rooms;
 static std::vector<User> users;
@@ -73,7 +74,7 @@ void enet_loop(ENetHost* client)
       {
         rooms.clear();
         deserialize_rooms_list(event.packet, rooms);
-        printf("rooms size %ld\n", rooms.size());
+        printf("rooms size %zd\n", rooms.size());
         break;
       }
       case E_LOBBY_SERVER_TO_LOBBY_CLIENT_ROOM_INFO_AGAR:
@@ -100,20 +101,20 @@ void enet_loop(ENetHost* client)
       }
       case E_LOBBY_SERVER_TO_LOBBY_CLIENT_SERVER_INFO:
       {
-        uint16_t port;
-        deserialize_server_port(event.packet, port);
-        printf("try launch, port: %d", port);
+        ConnectionInfo info;
+        deserialize_server_connection_info(event.packet, info);
+        printf("try launch, hostname: %s port: %d", info.hostName, info.port);
         printf("modif: %f", agarSettings.speedModif);
         if (room.type == 0)
         {
           const std::string path = "../../../agario/x64/Debug/agario.exe";
-          _execl(path.c_str(), "go", std::to_string(port).c_str(),
+          _execl(path.c_str(), "go", info.hostName, std::to_string(info.port).c_str(),
                  std::to_string(agarSettings.speedModif).c_str(), nullptr);
         }
         else
         {
           const std::string path = "../../../cars/x64/Debug/cars.exe";
-          _execl(path.c_str(), "go", std::to_string(port).c_str(),
+          _execl(path.c_str(), "go", info.hostName, std::to_string(info.port).c_str(),
                  std::to_string(carsSettings.forwardAccel).c_str(),
                  std::to_string(carsSettings.breakAccel).c_str(),
                  std::to_string(carsSettings.speedRotation).c_str(), nullptr);
@@ -364,6 +365,22 @@ int main(int, char**)
     return 1;
   }
 
+  std::fstream in("LobbyHostName.txt", std::fstream::in);
+  std::string hostString;
+  if (in.is_open())
+  {
+    getline(in, hostString);
+    if (!hostString.empty())
+      strcpy_s(host_name_lobby, hostString.c_str());
+    else
+      printf("empty string, set hostname by defualt");
+  }
+  else
+  {
+    printf("can't open file, set hostname by defualt");
+  }
+
+
   ENetAddress address;
   enet_address_set_host(&address, host_name_lobby);
   address.port = portLobby;
@@ -440,7 +457,8 @@ int main(int, char**)
   //IM_ASSERT(font != NULL);
 
   // Our state
-  bool show_demo_window = true;
+  bool show_demo_window = false;
+  bool show_hello_world_window = false;
   bool show_another_window = false;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -466,6 +484,7 @@ int main(int, char**)
       ImGui::ShowDemoWindow(&show_demo_window);
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+    if (show_hello_world_window)
     {
       static float f = 0.0f;
       static int counter = 0;

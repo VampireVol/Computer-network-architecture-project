@@ -159,12 +159,12 @@ void send_cars_server_settings(ENetPeer *peer, const CarsSettings &settings)
   enet_peer_send(peer, 0, packet);
 }
 
-void send_server_port(ENetPeer *peer, uint16_t port)
+void send_server_connection_info(ENetPeer *peer, const ConnectionInfo &info)
 {
-  ENetPacket *packet = enet_packet_create(nullptr, sizeof(uint8_t) + sizeof(uint16_t), ENET_PACKET_FLAG_RELIABLE);
+  ENetPacket *packet = enet_packet_create(nullptr, sizeof(uint8_t) + sizeof(ConnectionInfo), ENET_PACKET_FLAG_RELIABLE);
   BitStream bs(packet->data);
   bs.Write(E_LOBBY_SERVER_TO_LOBBY_CLIENT_SERVER_INFO);
-  bs.Write(&port);
+  bs.Write(&info);
 
   enet_peer_send(peer, 0, packet);
 }
@@ -316,10 +316,10 @@ void deserialize_cars_server_settings(ENetPacket *packet, CarsSettings &settings
   bs.Read(&settings);
 }
 
-void deserialize_server_port(ENetPacket *packet, uint16_t &port)
+void deserialize_server_connection_info(ENetPacket *packet, ConnectionInfo &info)
 {
   BitStream bs(packet->data, packet->dataLength);
-  bs.Read(&port);
+  bs.Read(&info);
 }
 
 void deserialize_start(ENetPacket *packet, uint16_t &roomId)

@@ -1,6 +1,12 @@
 #pragma once
 #include <cstdint>
 
+struct ConnectionInfo
+{
+  char hostName[32] = "";
+  uint16_t port = 0;
+};
+
 struct Room
 {
   char name[32] = "";
@@ -9,6 +15,7 @@ struct Room
   uint8_t maxPlayers = 1;
   uint8_t type = 0;
   uint8_t running = 0;
+  ConnectionInfo serverInfo;
 };
 
 struct AgarSettings
@@ -40,5 +47,4 @@ struct ServerInfo
 {
   uint16_t id = 0;
   uint16_t port = 0;
-  char hostName[32] = "";
 };

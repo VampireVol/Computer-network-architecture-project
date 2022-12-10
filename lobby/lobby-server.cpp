@@ -2,6 +2,9 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
+#include <fstream>
+#include <iostream>
+#include <string>
 #include "protocol.h"
 
 const int AGENT_PORT = 10007;
@@ -10,12 +13,13 @@ const int MAX_PEERS = 32;
 
 static uint16_t curRoomId = 1;
 static uint16_t curUserId = 1;
+static uint16_t curAgentIdx = 0;
 
 static std::vector<User> users;
 static std::vector<Room> rooms;
 static std::vector<AgarSettings> agarSettings;
 static std::vector<CarsSettings> carsSettings;
-static std::vector<ServerInfo> serverInfos;
+static std::vector<ENetPeer*> agents;
 static Room emptyR;
 static User emptyU;
 static AgarSettings emptyA;
@@ -56,17 +60,6 @@ Room& find_room(uint16_t id)
   }
   printf("Can't find room gg");
   return emptyR;
-}
-
-uint16_t find_port(uint16_t id)
-{
-  for (const auto &info : serverInfos)
-  {
-    if (info.id == id)
-      return info.port;
-  }
-  printf("Can't find port gg");
-  return 0;
 }
 
 const AgarSettings& find_agar_settings(uint16_t id)
@@ -142,7 +135,7 @@ void send_user_list(uint16_t roomId, ENetPeer *peers, ENetPeer *sender)
   }
 }
 
-void send_port(ENetPeer *peers, uint16_t port, uint16_t roomId)
+void send_connection_info(ENetPeer *peers, const ConnectionInfo &info, uint16_t roomId)
 {
   std::vector<ENetPeer *> connectedPeers;
   for (int i = 0; i < MAX_PEERS; ++i)
@@ -162,11 +155,11 @@ void send_port(ENetPeer *peers, uint16_t port, uint16_t roomId)
       continue;
     User &user = find_user(data->id);
     if (user.roomId == roomId)
-      send_server_port(peer, port);
+      send_server_connection_info(peer, info);
   }
 }
 
-void message_receive(const ENetEvent &event, ENetPeer *peers, ENetPeer *agent)
+void message_receive(const ENetEvent &event, ENetPeer *peers)
 {
   printf("catch!\n");
   switch (get_packet_type(event.packet))
@@ -209,7 +202,7 @@ void message_receive(const ENetEvent &event, ENetPeer *peers, ENetPeer *agent)
         {
           send_room_info_cars(event.peer, room, find_cars_settings(roomId), {});
         }
-        send_server_port(event.peer, find_port(roomId));
+        send_server_connection_info(event.peer, room.serverInfo);
       }
       else
       {
@@ -239,17 +232,21 @@ void message_receive(const ENetEvent &event, ENetPeer *peers, ENetPeer *agent)
     {
       uint16_t roomId;
       deserialize_start(event.packet, roomId);
+      //TODO chose next agent
       auto &room = find_room(roomId);
       if (room.type == 0)
       {
         auto settings = find_agar_settings(roomId);
-        send_agario_server_settings(agent, settings);
+        send_agario_server_settings(agents[curAgentIdx], settings);
       }
       else
       {
         auto settings = find_cars_settings(roomId);
-        send_cars_server_settings(agent, settings);
+        send_cars_server_settings(agents[curAgentIdx], settings);
       }
+      ++curAgentIdx;
+      if (curAgentIdx == agents.size())
+        curAgentIdx = 0;
       break;
     }
     case E_LOBBY_CLIENT_TO_LOBBY_SERVER_CREATE_AGAR_ROOM:
@@ -258,9 +255,7 @@ void message_receive(const ENetEvent &event, ENetPeer *peers, ENetPeer *agent)
       AgarSettings settings;
       deserialize_create_agar_room(event.packet, room, settings);
       room.id = get_room_id();
-
       const UserInfo *data = (UserInfo *) event.peer->data;
-
       User &user = find_user(data->id);
       user.roomId = room.id;
       settings.id = room.id;
@@ -291,14 +286,16 @@ void message_receive(const ENetEvent &event, ENetPeer *peers, ENetPeer *agent)
     case E_AGENT_TO_LOBBY_SERVER_SERVER_CREATED:
     {
       ServerInfo info;
+      char hostName[32] {""};
+      enet_address_get_host(&event.peer->address, hostName, 32);
       deserialize_server_created(event.packet, info);
-      serverInfos.push_back(info);
       Room &room = find_room(info.id);
       room.running = 1;
+      strcpy(room.serverInfo.hostName, hostName);
+      room.serverInfo.port = info.port;
       printf("server created id: %d port: %d\n", info.id, info.port);
-      send_port(peers, info.port, info.id);
+      send_connection_info(peers, room.serverInfo, info.id);
     }
-
   }
 }
 
@@ -310,7 +307,7 @@ int main(int argc, const char **argv)
     printf("Cannot init ENet");
     return 1;
   }
-  ENetAddress address, agentAddress;
+  ENetAddress address;
 
   address.host = ENET_HOST_ANY;
   address.port = LOBBY_SERVER_PORT;
@@ -323,12 +320,33 @@ int main(int argc, const char **argv)
     return 1;
   }
 
-  enet_address_set_host(&agentAddress, "localhost");
-  agentAddress.port = AGENT_PORT;
+  std::fstream in("ServersList.txt", std::fstream::in);
+  std::string agentString;
+  if (in.is_open())
+  {
+    while (getline(in, agentString))
+    {
+      ENetAddress agentAddress;
+      enet_address_set_host(&agentAddress, agentString.c_str());
+      agentAddress.port = AGENT_PORT;
+      ENetPeer *agent = enet_host_connect(server, &agentAddress, 2, 0);
+      agents.push_back(agent);
+      printf("put agent to list with host name %s\n", agentString.c_str());
+    }
+  }
+  in.close();
 
-  ENetPeer *agent = enet_host_connect(server, &agentAddress, 2, 0);
+  if (agents.empty())
+  {
+    printf("Can't open ServerList.txt or they empty. Set try connect to agent with default localhost");
+    ENetAddress agentAddress;
+    enet_address_set_host(&agentAddress, "localhost");
+    agentAddress.port = AGENT_PORT;
+    ENetPeer *agent = enet_host_connect(server, &agentAddress, 2, 0);
+    agents.push_back(agent);
+  }
 
-  if (!agent)
+  if (!agents[0])
   {
     printf("Cannot connect to agent\n");
     return 1;
@@ -345,7 +363,7 @@ int main(int argc, const char **argv)
         printf("Connection with %x:%u established\n", event.peer->address.host, event.peer->address.port);
         break;
       case ENET_EVENT_TYPE_RECEIVE:
-        message_receive(event, server->peers, agent);
+        message_receive(event, server->peers);
         printf("Packet received '%s'\n", event.packet->data);
         break;
       case ENET_EVENT_TYPE_DISCONNECT:

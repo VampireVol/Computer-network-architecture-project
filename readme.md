@@ -46,13 +46,13 @@ mkdir lobby/bin
 mkdir agario/bin
 mkdir cars/bin
 ```
-4. Build and how execute lobby-server and agent
+4. Build and how execute lobby-server and agent. Also create in /lobby/bin/ create ServersList.txt if you push agent to dedicated server
 ```
 g++ lobby/agent.cpp lobby/protocol.cpp -o lobby/bin/agent -lenet
 g++ lobby/lobby-server.cpp lobby/protocol.cpp -o lobby/bin/lobby-server -lenet
 
 ./lobby/bin/agent
-./lobby/bin/lobby-server
+(cd lobby/bin/ && ./lobby-server)
 ```
 5. Build and how execute server for agario and cars
 ```
@@ -64,6 +64,6 @@ g++ cars/server.cpp cars/protocol.cpp cars/entity.cpp -o cars/bin/server -lenet
 ```
 Also you can execute servers with params
 ```
-./agario/bin/server [port] [aiSize] [minStartRadius] [maxStartRadius] [weightLoss] [speedModif]
-./cars/bin/server [port] [forward_accel] [break_accel] [speed_rotation]
+./agario/bin/server [hostName] [port] [aiSize] [minStartRadius] [maxStartRadius] [weightLoss] [speedModif]
+./cars/bin/server [hostName] [port] [forward_accel] [break_accel] [speed_rotation]
 ```

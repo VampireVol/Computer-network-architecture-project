@@ -94,7 +94,7 @@ void send_create_cars_room(ENetPeer *peer, const Room &room, const CarsSettings 
 void send_room_id(ENetPeer *peer, uint16_t roomId);
 void send_agario_server_settings(ENetPeer *peer, const AgarSettings &settings);
 void send_cars_server_settings(ENetPeer *peer, const CarsSettings &settings);
-void send_server_port(ENetPeer *peer, uint16_t port);
+void send_server_connection_info(ENetPeer *peer, const ConnectionInfo &info);
 void send_start(ENetPeer *peer, uint16_t roomId);
 void send_join(ENetPeer *peer, uint16_t userId, uint16_t roomId);
 void send_leave(ENetPeer *peer, uint16_t userId, uint16_t roomId);
@@ -115,7 +115,7 @@ void deserialize_create_agar_room(ENetPacket *packet, Room &room, AgarSettings &
 void deserialize_create_cars_room(ENetPacket *packet, Room &room, CarsSettings &settings);
 void deserialize_agario_server_settings(ENetPacket *packet, AgarSettings &settings);
 void deserialize_cars_server_settings(ENetPacket *packet, CarsSettings &settings);
-void deserialize_server_port(ENetPacket *packet, uint16_t &port);
+void deserialize_server_connection_info(ENetPacket *packet, ConnectionInfo &info);
 void deserialize_start(ENetPacket *packet, uint16_t &roomId);
 void deserialize_join(ENetPacket *packet, uint16_t &userId, uint16_t &roomId);
 void deserialize_leave(ENetPacket *packet, uint16_t &userId, uint16_t &roomId);
