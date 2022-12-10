@@ -364,7 +364,7 @@ int main(int, char**)
   }
 
   ENetAddress address;
-  enet_address_set_host(&address, "localhost");
+  enet_address_set_host(&address, "127.0.0.1");
   address.port = portLobby;
 
   ENetPeer* serverPeer = enet_host_connect(client, &address, 2, 0);
