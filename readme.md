@@ -1,14 +1,31 @@
+[Readme in Russian](./readme_ru.md)
+
 # Description
 This is client-server project for game-servers
 Based on bgfx, glfw, imgui for rendering and enet for networking
+The project contains two client-server games, a lobby client, a lobby server and an agent for running game servers on a dedicated server.
+- The first agario-like game controls an orb that can absorb the orbs of other players or bots that are smaller than it. Inputs are sent to the server from the players, and there are movements on it and packets with new positions are sent.
+- The second game about the ability to control the car in the form of capsules. The main functionality implemented in this game:
+-- All simulation takes place on the server, all data is transmitted as snapshots
+-- Implemented interpolation between snapshots in case of packet loss on the client
+-- Implemented local simulation for client-managed objects and rerolling physics when there are differences between received values from the server
+- Lobby client - an application for creating and placing rooms that can be created for two games. With it, the player can receive information from the lobby server about the created rooms, who connected and connected to the session that has already started, each room has its own set of attributes depending on the type of game.
 
-## Features
+### List of modifiers for servers
 
-- One
-- Two
+- For agario
+-- aiSize - number of bots in the game 0-32
+-- minStartRadius - minimum size of spheres at start 0.0-3.0
+-- maxStartRadius - maximum size of spheres at start 0.0-3.0
+-- weightLoss - weight loss of the entity eaten by another entity 0.0-1.0
+-- speedModif - speed modifier 0.1-10.0
+- For cars
+-- forward_accel - forward acceleration 0.0-30.0
+-- break_accel - reverse acceleration 0.0-30.0
+-- speed_rotation - rotation speed 0.0-1.0
 
 ## Architecture
-On each dedicated servers deploy Agent, they can launch game servers when lobby-server send signal for creation. All clients firstly connected to the lobby-server, where they can send info about game rooms, then one player press 'start' lobby-server send messeage to Agent and they send info about connection.
+On each dedicated servers deploy Agent, they can launch game servers when lobby-server send signal for creation. All clients firstly connected to the lobby-server, where they can send info about game rooms, then one player press 'start' lobby-server send messeage to Agent and they send info about connection. The agent creates a game server and then sends connection information. This information is then sent from the lobby server to the lobby client. The lobby client launches the client of the selected game with the selected options. Next, the game client contacts the game server and you can play!
 ![Architecture](./images/architecture.png)
 
 
@@ -67,3 +84,5 @@ Also you can execute servers with params
 ./agario/bin/server [hostName] [port] [aiSize] [minStartRadius] [maxStartRadius] [weightLoss] [speedModif]
 ./cars/bin/server [hostName] [port] [forward_accel] [break_accel] [speed_rotation]
 ```
+In lobby/bin/ServersList.txt you can set host names for agents deployed on dedicated servers.
+For lobby-client near with lobby-client.exe in LobbyHostName.txt you can put host name to lobby-server. In default used localhost. 
