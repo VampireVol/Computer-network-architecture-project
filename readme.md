@@ -11,6 +11,8 @@ The project contains two client-server games, a lobby client, a lobby server and
 -- Implemented local simulation for client-managed objects and rerolling physics when there are differences between received values from the server
 - Lobby client - an application for creating and placing rooms that can be created for two games. With it, the player can receive information from the lobby server about the created rooms, who connected and connected to the session that has already started, each room has its own set of attributes depending on the type of game.
 
+Video demonstration you can see here: https://disk.yandex.ru/i/QbswJCAiPKrv7A
+
 ### List of modifiers for servers
 
 - For agario
