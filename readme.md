@@ -2,7 +2,9 @@
 
 # Description
 This is client-server project for game-servers
+
 Based on bgfx, glfw, imgui for rendering and enet for networking
+
 The project contains two client-server games, a lobby client, a lobby server and an agent for running game servers on a dedicated server.
 - The first agario-like game controls an orb that can absorb the orbs of other players or bots that are smaller than it. Inputs are sent to the server from the players, and there are movements on it and packets with new positions are sent.
 - The second game about the ability to control the car in the form of capsules. The main functionality implemented in this game:
@@ -86,4 +88,5 @@ Also you can execute servers with params
 ./cars/bin/server [hostName] [port] [forward_accel] [break_accel] [speed_rotation]
 ```
 In lobby/bin/ServersList.txt you can set host names for agents deployed on dedicated servers.
+
 For lobby-client near with lobby-client.exe in LobbyHostName.txt you can put host name to lobby-server. In default used localhost. 
